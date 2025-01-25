@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { VersionedTransaction } from '@solana/web3.js';
+import { Instagram, Linkedin, Github, Twitter, Send } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import {
   Zap,
   Wallet,
@@ -7,8 +10,9 @@ import {
   Loader2,
   Share2,
   History,
-  CheckCircle2,
 } from 'lucide-react';
+import { TransactionMessage } from '@solana/web3.js';
+
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import {
@@ -16,19 +20,15 @@ import {
   PublicKey,
   LAMPORTS_PER_SOL,
   SystemProgram,
+  TransactionInstruction,
 } from '@solana/web3.js';
 import {
   TOKEN_PROGRAM_ID,
   createCloseAccountInstruction,
 } from '@solana/spl-token';
 import '@solana/wallet-adapter-react-ui/styles.css';
-import {
-  saveLog,
-  updateStats,
-  fetchLogs,
-  fetchStats,
-  fetchDynamicStats,
-} from './supabaseFunctions';
+import { saveLog, fetchLogs, fetchDynamicStats } from './supabaseFunctions';
+import AboutUs from './pages/AboutUs'; // Import About Us page
 
 interface TokenAccount {
   pubkey: string;
@@ -44,11 +44,76 @@ interface TransactionHistory {
   walletAddress: string;
 }
 
-const DONATION_PERCENTAGE = 20;
-const REFERRAL_PERCENTAGE = 20;
+const socialLinks = [
+  {
+    name: 'Instagram',
+    icon: Instagram,
+    href: 'https://instagram.com/eliaskortbawii',
+    color: 'hover:text-pink-600',
+  },
+  {
+    name: 'LinkedIn',
+    icon: Linkedin,
+    href: 'https://www.linkedin.com/in/elias-kortbawi-6671bb196/',
+    color: 'hover:text-blue-700',
+  },
+  {
+    name: 'GitHub',
+    icon: Github,
+    href: 'https://github.com/supernetflix',
+    color: 'hover:text-gray-700',
+  },
+  {
+    name: 'Twitter (X)',
+    icon: Twitter,
+    href: 'https://x.com/elias_cortbawi',
+    color: 'hover:text-blue-400',
+  },
+  {
+    name: 'Telegram',
+    icon: Send,
+    href: 'https://t.me/super_netflix',
+    color: 'hover:text-blue-500',
+  }, // New Telegram link
+];
+const DONATION_PERCENTAGE = 5;
+const REFERRAL_PERCENTAGE = 5;
 const DONATION_WALLET = new PublicKey(
   '9uPrBhLnv2mt4LV28G33tG1AinY16PpX4cy3dr7Q7aBZ'
 );
+
+function SuccessPopup({
+  isVisible,
+  onClose,
+  accountsClosed,
+  solRecovered,
+}: {
+  isVisible: boolean;
+  onClose: () => void;
+  accountsClosed: number;
+  solRecovered: number;
+}) {
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Success!</h2>
+        <p className="text-gray-700 mb-4">
+          You successfully closed <strong>{accountsClosed}</strong>{' '}
+          {accountsClosed === 1 ? 'account' : 'accounts'} and recovered{' '}
+          <strong>{solRecovered.toFixed(4)} SOL</strong>.
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function StatsCard({
   icon: Icon,
@@ -110,20 +175,16 @@ function TokenAccountsList({
   onSelect,
   onCloseAccounts,
   isClosing,
+  onToggleAll,
+  allSelected,
 }: {
   accounts: TokenAccount[];
   onSelect: (pubkey: string) => void;
   onCloseAccounts: () => void;
   isClosing: boolean;
+  onToggleAll: () => void;
+  allSelected: boolean;
 }) {
-  if (!accounts.length) {
-    return (
-      <div className="text-center py-8 text-gray-600">
-        No empty token accounts found.
-      </div>
-    );
-  }
-
   const selectedAccounts = accounts.filter((acc) => acc.selected);
   const totalRentLamports = selectedAccounts.reduce(
     (sum, account) => sum + account.rentLamports,
@@ -143,55 +204,17 @@ function TokenAccountsList({
 
   return (
     <div className="space-y-4">
-      <div className="bg-purple-50 p-4 rounded-lg">
-        <p className="text-purple-800 font-semibold">
-          Found {accounts.length} empty token accounts with {totalRentSol} SOL
-          in recoverable rent
-        </p>
-      </div>
-      <div className="space-y-2">
-        {accounts.map((account) => (
-          <div
-            key={account.pubkey}
-            className={`bg-white p-4 rounded-lg shadow-sm flex justify-between items-center cursor-pointer hover:bg-purple-50 ${
-              account.selected ? 'ring-2 ring-purple-500' : ''
-            }`}
-            onClick={() => onSelect(account.pubkey)}
-          >
-            <div className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                checked={account.selected}
-                onChange={() => onSelect(account.pubkey)}
-                className="h-4 w-4 text-purple-600"
-              />
-              <div>
-                <p className="font-mono text-sm text-gray-600">
-                  {account.pubkey.slice(0, 4)}...{account.pubkey.slice(-4)}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Mint: {account.mint.slice(0, 4)}...{account.mint.slice(-4)}
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-semibold text-purple-600">
-                {(account.rentLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-      {selectedAccounts.length > 0 && (
-        <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold mb-4">Transaction Summary</h3>
+      {/* Transaction Summary at the Top */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-lg font-semibold mb-4">Transaction Summary</h3>
+        {selectedAccounts.length > 0 ? (
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>Total Recoverable SOL</span>
               <span className="font-semibold">{totalRentSol} SOL</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>Donation ({DONATION_PERCENTAGE}%)</span>
+              <span>Processing fee ({DONATION_PERCENTAGE}%)</span>
               <span>{donationAmount} SOL</span>
             </div>
             <div className="flex justify-between font-bold text-purple-600 pt-2 border-t">
@@ -199,25 +222,66 @@ function TokenAccountsList({
               <span>{userReceives} SOL</span>
             </div>
           </div>
-          <button
-            onClick={onCloseAccounts}
-            disabled={isClosing}
-            className="w-full mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center"
-          >
-            {isClosing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Closing Accounts...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Close Selected Accounts
-              </>
-            )}
-          </button>
-        </div>
-      )}
+        ) : (
+          <p className="text-gray-600">No accounts selected.</p>
+        )}
+      </div>
+
+      {/* Select All Checkbox */}
+      <div
+        className="flex items-center mb-4 cursor-pointer"
+        onClick={onToggleAll} // Trigger the toggle function when clicking anywhere in the row
+      >
+        <input
+          type="checkbox"
+          checked={allSelected}
+          onChange={(e) => e.stopPropagation()} // Prevent event bubbling from the checkbox
+          className="h-4 w-4 text-purple-600"
+        />
+        <label className="ml-2 text-gray-800 font-medium">Select All</label>
+      </div>
+
+      {/* List of Accounts */}
+      <div className="space-y-2">
+        {accounts.length > 0 ? (
+          accounts.map((account) => (
+            <div
+              key={account.pubkey}
+              className={`bg-white p-4 rounded-lg shadow-sm flex justify-between items-center hover:bg-purple-50 ${
+                account.selected ? 'ring-2 ring-purple-500' : ''
+              }`}
+              onClick={() => onSelect(account.pubkey)} // Parent row click
+            >
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  checked={account.selected}
+                  onClick={(e) => e.stopPropagation()} // Prevent row click when checkbox is clicked
+                  onChange={() => onSelect(account.pubkey)} // Handle checkbox toggle
+                  className="h-4 w-4 text-purple-600"
+                />
+                <div>
+                  <p className="font-mono text-sm text-gray-600">
+                    {account.pubkey.slice(0, 4)}...{account.pubkey.slice(-4)}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Mint: {account.mint.slice(0, 4)}...{account.mint.slice(-4)}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-semibold text-purple-600">
+                  {(account.rentLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                </p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center text-gray-600">
+            No empty token accounts found.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -252,8 +316,10 @@ function TransactionHistorySection({
                     {new Date(tx.date).toLocaleString()}
                   </p>
                   <p className="font-semibold">
-                    Closed {tx.accountsClosed} accounts
+                    Closed {tx.accountsClosed}{' '}
+                    {tx.accountsClosed === 1 ? 'account' : 'accounts'}
                   </p>
+
                   <p className="text-sm text-gray-500">
                     Wallet:{' '}
                     <a
@@ -297,67 +363,73 @@ function App() {
     currentTPS: 0,
   });
 
-const fetchAndSetStats = async () => {
-  try {
-    console.log("Fetching dynamic stats...");
-    
-    // Fetch calculated stats from logs
-    const statsFromLogs = await fetchDynamicStats();
-    console.log("Fetched stats from logs:", statsFromLogs);
+  const [allSelected, setAllSelected] = useState(false);
 
-    // Ensure statsFromLogs contains valid data
-    if (statsFromLogs) {
-      setStats((prevStats) => ({
-        totalSolRecovered: statsFromLogs.total_sol_recovered || 0,
-        accountsNuked: statsFromLogs.total_accounts_nuked || 0,
-        currentTPS: prevStats.currentTPS || 0, // Preserve current TPS value
-      }));
-      console.log("Stats updated successfully:", {
-        totalSolRecovered: statsFromLogs.total_sol_recovered || 0,
-        accountsNuked: statsFromLogs.total_accounts_nuked || 0,
-      });
-    } else {
-      console.warn("Stats from logs are empty or invalid.");
+  const toggleAllAccounts = () => {
+    setAllSelected((prev) => !prev);
+    setEmptyAccounts((accounts) =>
+      accounts.map((account) => ({ ...account, selected: !allSelected }))
+    );
+  };
+
+  const fetchAndSetStats = async () => {
+    try {
+      console.log('Fetching dynamic stats...');
+
+      // Fetch calculated stats from logs
+      const statsFromLogs = await fetchDynamicStats();
+      console.log('Fetched stats from logs:', statsFromLogs);
+
+      // Ensure statsFromLogs contains valid data
+      if (statsFromLogs) {
+        setStats((prevStats) => ({
+          totalSolRecovered: statsFromLogs.total_sol_recovered || 0,
+          accountsNuked: statsFromLogs.total_accounts_nuked || 0,
+          currentTPS: prevStats.currentTPS || 0, // Preserve current TPS value
+        }));
+        console.log('Stats updated successfully:', {
+          totalSolRecovered: statsFromLogs.total_sol_recovered || 0,
+          accountsNuked: statsFromLogs.total_accounts_nuked || 0,
+        });
+      } else {
+        console.warn('Stats from logs are empty or invalid.');
+        setStats((prevStats) => ({
+          totalSolRecovered: 0,
+          accountsNuked: 0,
+          currentTPS: prevStats.currentTPS || 0, // Preserve current TPS value
+        }));
+      }
+    } catch (error) {
+      // Log and gracefully handle errors
+      console.error('Error in fetchAndSetStats:', error.message || error);
+
+      // Optionally, reset stats to avoid stale data in the UI
       setStats((prevStats) => ({
         totalSolRecovered: 0,
         accountsNuked: 0,
-        currentTPS: prevStats.currentTPS || 0, // Preserve current TPS value
+        currentTPS: prevStats.currentTPS || 0,
       }));
     }
-  } catch (error) {
-    // Log and gracefully handle errors
-    console.error("Error in fetchAndSetStats:", error.message || error);
+  };
 
-    // Optionally, reset stats to avoid stale data in the UI
-    setStats((prevStats) => ({
-      totalSolRecovered: 0,
-      accountsNuked: 0,
-      currentTPS: prevStats.currentTPS || 0,
-    }));
-  }
-};
-
-
-
-
-// Fetch and Set Logs
-const fetchAndSetLogs = async () => {
-  try {
-    const logsFromDB = await fetchLogs();
-    if (logsFromDB) {
-      setHistory(
-        logsFromDB.map((log) => ({
-          date: log.date || new Date().toISOString(), // Default to current time if missing
-          accountsClosed: log.accountsClosed || 0, // Directly use accounts_closed from DB
-          solRecovered: log.solRecovered || 0.0, // Directly use sol_recovered from DB
-          walletAddress: log.walletAddress || 'Unknown', // Default to 'Unknown' if null
-        }))
-      );
+  // Fetch and Set Logs
+  const fetchAndSetLogs = async () => {
+    try {
+      const logsFromDB = await fetchLogs();
+      if (logsFromDB) {
+        setHistory(
+          logsFromDB.map((log) => ({
+            date: log.date || new Date().toISOString(), // Default to current time if missing
+            accountsClosed: log.accountsClosed || 0, // Directly use accounts_closed from DB
+            solRecovered: log.solRecovered || 0.0, // Directly use sol_recovered from DB
+            walletAddress: log.walletAddress || 'Unknown', // Default to 'Unknown' if null
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching logs:', error);
     }
-  } catch (error) {
-    console.error('Error fetching logs:', error);
-  }
-};
+  };
   const fetchTPS = async () => {
     try {
       const recentPerformance = await connection.getRecentPerformanceSamples(1);
@@ -449,235 +521,344 @@ const fetchAndSetLogs = async () => {
     );
   };
 
-const closeSelectedAccounts = async () => {
-  if (!publicKey || isClosing) return;
+  const closeSelectedAccounts = async (): Promise<void> => {
+    if (!publicKey || isClosing) return;
 
-  const selectedAccounts = emptyAccounts.filter((acc) => acc.selected);
-  if (selectedAccounts.length === 0) return;
+    const selectedAccounts = emptyAccounts.filter((acc) => acc.selected);
+    if (selectedAccounts.length === 0) return;
 
-  setIsClosing(true);
-  setError(null);
+    setIsClosing(true);
+    setError(null);
 
-  try {
-    const recentBlockhash = await connection.getLatestBlockhash();
-    const transaction = new Transaction({
-      feePayer: publicKey,
-      ...recentBlockhash,
-    });
+    try {
+      let totalRentLamports = 0;
+      const batches: TransactionInstruction[][] = [];
+      let currentBatch: TransactionInstruction[] = [];
 
-    let totalRentLamports = 0;
+      // Prepare batches of up to 15 accounts
+      selectedAccounts.forEach((account, index) => {
+        totalRentLamports += account.rentLamports;
+        currentBatch.push(
+          createCloseAccountInstruction(
+            new PublicKey(account.pubkey),
+            publicKey,
+            publicKey
+          )
+        );
 
-    selectedAccounts.forEach((account) => {
-      totalRentLamports += account.rentLamports;
-      transaction.add(
-        createCloseAccountInstruction(
-          new PublicKey(account.pubkey),
-          publicKey,
-          publicKey
-        )
+        if ((index + 1) % 18 === 0 || index === selectedAccounts.length - 1) {
+          batches.push([...currentBatch]);
+          currentBatch = [];
+        }
+      });
+
+      // Calculate donation and referral amounts
+      const donationAmount = Math.floor(
+        (totalRentLamports * DONATION_PERCENTAGE) / 100
       );
-    });
+      const params = new URLSearchParams(window.location.search);
+      const referrer = params.get('ref'); // Get referrer wallet from URL
 
-    const donationAmount = Math.floor(
-      (totalRentLamports * DONATION_PERCENTAGE) / 100
-    );
-    if (donationAmount > 0) {
-      transaction.add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: DONATION_WALLET,
-          lamports: donationAmount,
+      let referralAmount = 0;
+      let donationAfterReferral = donationAmount;
+
+      if (referrer) {
+        referralAmount = Math.floor(
+          (donationAmount * REFERRAL_PERCENTAGE) / 100
+        );
+        donationAfterReferral = donationAmount - referralAmount; // Deduct referral amount from donation
+      }
+
+      // Add donation transfer instruction
+      if (donationAfterReferral > 0) {
+        batches.push([
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: DONATION_WALLET,
+            lamports: donationAfterReferral,
+          }),
+        ]);
+      }
+
+      // Add referral transfer instruction if applicable
+      if (referrer && referralAmount > 0) {
+        batches.push([
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: new PublicKey(referrer),
+            lamports: referralAmount,
+          }),
+        ]);
+      }
+
+      // Prepare transactions for all batches
+      const transactions = await Promise.all(
+        batches.map(async (instructions) => {
+          const message = new TransactionMessage({
+            payerKey: publicKey,
+            recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
+            instructions, // Instructions for this batch
+          }).compileToV0Message();
+
+          return new VersionedTransaction(message);
         })
       );
-    }
 
-    const signature = await sendTransaction(transaction, connection);
-    console.log('Transaction sent:', signature);
+      // Phantom's method to sign all transactions
+      const signedTransactions = await (
+        window as any
+      ).phantom.solana.signAllTransactions(transactions);
+      console.log('Transactions signed successfully.');
 
-    const confirmation = await connection.confirmTransaction(
-      {
-        signature,
-        blockhash: recentBlockhash.blockhash,
-        lastValidBlockHeight: recentBlockhash.lastValidBlockHeight,
-      },
-      'confirmed'
-    );
+      // Send all signed transactions
+      const sendResults = await Promise.all(
+        signedTransactions.map((tx: VersionedTransaction) =>
+          connection.sendRawTransaction(tx.serialize())
+        )
+      );
 
-    if (confirmation.value.err) {
-      throw new Error('Transaction failed to confirm');
-    }
+      // Confirm all transactions
+      await Promise.all(
+        sendResults.map((signature: string) =>
+          connection.confirmTransaction(signature, 'finalized')
+        )
+      );
 
-    const solRecovered = totalRentLamports / LAMPORTS_PER_SOL;
-    const accountsClosed = selectedAccounts.length;
+      const solRecovered = totalRentLamports / LAMPORTS_PER_SOL;
+      const accountsClosed = selectedAccounts.length;
 
-    // Save log and update stats
-    await saveLog(
-      `Recovered ${solRecovered.toFixed(4)} SOL from ${accountsClosed} accounts.`,
-      '',
-      publicKey.toString(),
-      solRecovered,
-      accountsClosed
-    );
+      // Save log and update stats
+      // Log the first transaction signature as an example
+      await saveLog(
+        `Recovered ${solRecovered.toFixed(
+          4
+        )} SOL from ${accountsClosed} accounts in ${
+          batches.length
+        } transactions.`,
+        sendResults.join(', '), // Join all transaction signatures into a string
+        publicKey.toString(),
+        solRecovered,
+        accountsClosed
+      );
 
-    await updateStats(accountsClosed, solRecovered); // Increment stats in the database
-    await fetchAndSetLogs(); // Update logs in the UI
-    await fetchAndSetStats(); // Update stats in the UI
-
-    await scanAccounts(); // Refresh empty accounts
-  } catch (err) {
-    console.error('Error closing accounts:', err);
-    setError(err.message || 'Failed to close accounts. Please try again.');
-  } finally {
-    setIsClosing(false);
-  }
-};
-
-
-// Single useEffect for Initial Data Fetch
-useEffect(() => {
-  const fetchInitialData = async () => {
-    try {
-      await fetchAndSetStats();
-      await fetchAndSetLogs();
-    } catch (error) {
-      console.error('Error fetching initial data:', error);
+      await scanAccounts(); // Refresh empty accounts
+      setPopupData({ accountsClosed, solRecovered });
+      setIsPopupVisible(true);
+      console.log(
+        `All ${accountsClosed} accounts closed successfully in ${batches.length} transactions.`
+      );
+    } catch (err: any) {
+      console.error('Error closing accounts:', err);
+      setError(err.message || 'Failed to close accounts. Please try again.');
+    } finally {
+      setIsClosing(false);
     }
   };
 
-  fetchInitialData();
-}, []);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [popupData, setPopupData] = useState({
+    accountsClosed: 0,
+    solRecovered: 0,
+  });
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        await fetchAndSetStats();
+        await fetchAndSetLogs(); // Add your second function here
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+      }
+    };
+
+    fetchInitialData();
+
+    // Set up intervals for both fetches
+    const statsInterval = setInterval(fetchAndSetStats, 3000);
+    const logsInterval = setInterval(fetchAndSetLogs, 5000); // Example interval for logs
+
+    // Cleanup intervals on component unmount
+    return () => {
+      clearInterval(statsInterval);
+      clearInterval(logsInterval);
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
-      <nav className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <Zap className="w-8 h-8 text-purple-600" />
-              <span className="ml-2 text-xl font-bold text-gray-800">
-                SolCleaner
-              </span>
-            </div>
-            <WalletMultiButton className="!bg-purple-600 hover:!bg-purple-700" />
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Clean Your Solana Token Accounts
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Recover SOL from empty token accounts safely and efficiently.
-            Connect your wallet to start cleaning and claim your SOL back.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          <StatsCard
-            icon={Wallet}
-            title="Total SOL Recovered"
-            value={`${stats.totalSolRecovered.toFixed(2)} SOL`}
-          />
-          <StatsCard
-            icon={Database}
-            title="Accounts Nuked"
-            value={stats.accountsNuked.toString()}
-          />
-          <StatsCard
-            icon={TrendingUp}
-            title="Current TPS"
-            value={stats.currentTPS.toString()}
-          />
-        </div>
-        <TransactionHistorySection history={history} />
-        {publicKey ? (
-          <>
-            <ReferralSection walletAddress={publicKey.toString()} />
-
-            <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Your Empty Token Accounts
-                </h2>
-                <button
-                  onClick={scanAccounts}
-                  disabled={isScanning}
-                  className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+    <Router>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
+        <nav className="bg-white shadow-md">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center">
+                <Zap className="w-8 h-8 text-purple-600" />
+                <Link
+                  to="/"
+                  className="ml-2 text-xl font-bold text-gray-800 hover:text-purple-600"
                 >
-                  {isScanning ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Scanning...
-                    </>
-                  ) : (
-                    'Rescan Accounts'
-                  )}
-                </button>
+                  SolCleaner
+                </Link>
               </div>
-              {error ? (
-                <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-4">
-                  {error}
-                </div>
-              ) : (
-                <TokenAccountsList
-                  accounts={emptyAccounts}
-                  onSelect={toggleAccountSelection}
-                  onCloseAccounts={closeSelectedAccounts}
-                  isClosing={isClosing}
-                />
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              How It Works
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Wallet className="w-8 h-8 text-purple-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">
-                  1. Connect Wallet
-                </h3>
-                <p className="text-gray-600">
-                  Connect your Solana wallet to get started
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Database className="w-8 h-8 text-purple-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">2. Scan Accounts</h3>
-                <p className="text-gray-600">
-                  We'll find empty token accounts you can clean
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Zap className="w-8 h-8 text-purple-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">3. Recover SOL</h3>
-                <p className="text-gray-600">
-                  Clean accounts and get your SOL back
-                </p>
+              <div className="flex items-center space-x-6">
+                <Link
+                  to="/about"
+                  className="text-gray-600 hover:text-purple-600 font-medium"
+                >
+                  About Us
+                </Link>
+                <WalletMultiButton className="!bg-purple-600 hover:!bg-purple-700" />
               </div>
             </div>
           </div>
-        )}
-      </main>
+        </nav>
 
-      <footer className="bg-white border-t mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-center text-gray-500">
-            © 2025 SolCleaner. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+        {/* Success Popup */}
+        <SuccessPopup
+          isVisible={isPopupVisible}
+          onClose={() => setIsPopupVisible(false)}
+          accountsClosed={popupData.accountsClosed}
+          solRecovered={popupData.solRecovered}
+        />
+
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <Routes>
+            {/* Home Page */}
+            <Route
+              path="/"
+              element={
+                <div>
+                  <div className="text-center mb-16">
+                    <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                      Clean Your Solana Token Accounts
+                    </h1>
+                    <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                      Recover SOL from empty token accounts safely and
+                      efficiently. Connect your wallet to start cleaning and
+                      claim your SOL back.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+                    <StatsCard
+                      icon={Wallet}
+                      title="Total SOL Recovered"
+                      value={`${stats.totalSolRecovered.toFixed(2)} SOL`}
+                    />
+                    <StatsCard
+                      icon={Database}
+                      title="Tokens Closed"
+                      value={stats.accountsNuked.toString()}
+                    />
+                    <StatsCard
+                      icon={TrendingUp}
+                      title="Current TPS"
+                      value={stats.currentTPS.toString()}
+                    />
+                  </div>
+
+                  {publicKey ? (
+                    <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          Your Empty Token Accounts
+                        </h2>
+                        <div className="flex items-center space-x-4">
+                          <button
+                            onClick={scanAccounts}
+                            disabled={isScanning}
+                            className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                          >
+                            {isScanning ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Scanning...
+                              </>
+                            ) : (
+                              'Scan Accounts'
+                            )}
+                          </button>
+
+                          <button
+                            onClick={closeSelectedAccounts}
+                            disabled={
+                              isClosing ||
+                              !emptyAccounts.some((acc) => acc.selected)
+                            }
+                            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                          >
+                            {isClosing ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Closing...
+                              </>
+                            ) : (
+                              'Close Selected Accounts'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      {error ? (
+                        <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-4">
+                          {error}
+                        </div>
+                      ) : (
+                        <TokenAccountsList
+                          accounts={emptyAccounts}
+                          onSelect={toggleAccountSelection}
+                          onCloseAccounts={closeSelectedAccounts}
+                          isClosing={isClosing}
+                          onToggleAll={toggleAllAccounts}
+                          allSelected={allSelected}
+                        />
+                      )}
+                    </div>
+                  ) : null}
+
+                  <TransactionHistorySection
+                    history={history}
+                    isLoading={isScanning}
+                  />
+                  {publicKey ? (
+                    <ReferralSection walletAddress={publicKey.toString()} />
+                  ) : null}
+                </div>
+              }
+            />
+
+            {/* About Us Page */}
+            <Route path="/about" element={<AboutUs />} />
+          </Routes>
+        </main>
+
+        <footer className="bg-white border-t">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">
+                Connect With Us
+              </h3>
+              <ul className="mt-4 flex justify-center space-x-6">
+                {socialLinks.map((social) => (
+                  <li key={social.name}>
+                    <a
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`text-gray-400 transition-colors ${social.color}`}
+                      title={social.name}
+                    >
+                      <social.icon className="h-6 w-6" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-8 text-base text-gray-400">
+                © {new Date().getFullYear()} SolCleaner. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </Router>
   );
 }
 
