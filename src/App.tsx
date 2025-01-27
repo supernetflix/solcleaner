@@ -705,7 +705,7 @@ function App() {
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <img
-                  src="/image/logo.png"
+                  src="/logo.jpg"
                   alt="SolCleaner Logo"
                   className="w-10 h-10"
                 />
