@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { VersionedTransaction } from '@solana/web3.js';
-import { Instagram, Linkedin, Github, Twitter, Send } from 'lucide-react';
+import { Instagram, Linkedin, Github, X, Send } from 'lucide-react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import {
   Zap,
@@ -64,8 +64,8 @@ const socialLinks = [
     color: 'hover:text-gray-700',
   },
   {
-    name: 'Twitter (X)',
-    icon: Twitter,
+    name: 'X (Twitter)',
+    icon: X,
     href: 'https://x.com/elias_cortbawi',
     color: 'hover:text-blue-400',
   },
@@ -209,14 +209,27 @@ function TokenAccountsList({
         <h3 className="text-lg font-semibold mb-4">Transaction Summary</h3>
         {selectedAccounts.length > 0 ? (
           <div className="space-y-2">
+            {/* Added Selected/Total Accounts */}
+            <div className="flex justify-between text-gray-600">
+              <span>Accounts Selected</span>
+              <span className="font-semibold">
+                {selectedAccounts.length} / {accounts.length}
+              </span>
+            </div>
+
+            {/* Total Recoverable SOL */}
             <div className="flex justify-between">
               <span>Total Recoverable SOL</span>
               <span className="font-semibold">{totalRentSol} SOL</span>
             </div>
+
+            {/* Processing Fee */}
             <div className="flex justify-between text-gray-600">
               <span>Processing fee ({DONATION_PERCENTAGE}%)</span>
               <span>{donationAmount} SOL</span>
             </div>
+
+            {/* You Receive */}
             <div className="flex justify-between font-bold text-purple-600 pt-2 border-t">
               <span>You Receive</span>
               <span>{userReceives} SOL</span>
@@ -691,7 +704,11 @@ function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
-                <Zap className="w-8 h-8 text-purple-600" />
+                <img
+                  src="/image/logo.png"
+                  alt="SolCleaner Logo"
+                  className="w-10 h-10"
+                />
                 <Link
                   to="/"
                   className="ml-2 text-xl font-bold text-gray-800 hover:text-purple-600"
@@ -699,6 +716,7 @@ function App() {
                   SolCleaner
                 </Link>
               </div>
+
               <div className="flex items-center space-x-6">
                 <Link
                   to="/about"
