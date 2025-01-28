@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { VersionedTransaction } from '@solana/web3.js';
-import { Instagram, Linkedin, Github, X, Send } from 'lucide-react';
+import { Instagram, Linkedin, Github, X, Send, Moon, Sun } from 'lucide-react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import {
   Zap,
@@ -28,7 +28,7 @@ import {
 } from '@solana/spl-token';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import { saveLog, fetchLogs, fetchDynamicStats } from './supabaseFunctions';
-import AboutUs from './pages/AboutUs'; // Import About Us page
+import AboutUs from './pages/AboutUs';
 
 interface TokenAccount {
   pubkey: string;
@@ -74,8 +74,9 @@ const socialLinks = [
     icon: Send,
     href: 'https://t.me/super_netflix',
     color: 'hover:text-blue-500',
-  }, // New Telegram link
+  },
 ];
+
 const DONATION_PERCENTAGE = 5;
 const REFERRAL_PERCENTAGE = 5;
 const DONATION_WALLET = new PublicKey(
@@ -97,9 +98,9 @@ function SuccessPopup({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Success!</h2>
-        <p className="text-gray-700 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-sm w-full transition-colors duration-200">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Success!</h2>
+        <p className="text-gray-700 dark:text-gray-300 mb-4">
           You successfully closed <strong>{accountsClosed}</strong>{' '}
           {accountsClosed === 1 ? 'account' : 'accounts'} and recovered{' '}
           <strong>{solRecovered.toFixed(4)} SOL</strong>.
@@ -125,10 +126,10 @@ function StatsCard({
   value: string;
 }) {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md transition-colors duration-200">
       <div className="flex items-center space-x-3 mb-2">
         <Icon className="w-6 h-6 text-purple-600" />
-        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{title}</h3>
       </div>
       <p className="text-2xl font-bold text-purple-600">{value}</p>
     </div>
@@ -143,12 +144,12 @@ function ReferralSection({ walletAddress }: { walletAddress: string }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-8 transition-colors duration-200">
       <div className="flex items-center space-x-3 mb-4">
         <Share2 className="w-6 h-6 text-purple-600" />
-        <h2 className="text-2xl font-bold text-gray-900">Your Referral Link</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Referral Link</h2>
       </div>
-      <p className="text-gray-600 mb-4">
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
         Share your referral link and earn {REFERRAL_PERCENTAGE}% of donations
         from referred users!
       </p>
@@ -157,7 +158,7 @@ function ReferralSection({ walletAddress }: { walletAddress: string }) {
           type="text"
           value={referralLink}
           readOnly
-          className="flex-1 p-2 border rounded-lg bg-gray-50"
+          className="flex-1 p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white"
         />
         <button
           onClick={copyToClipboard}
@@ -204,80 +205,73 @@ function TokenAccountsList({
 
   return (
     <div className="space-y-4">
-      {/* Transaction Summary at the Top */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold mb-4">Transaction Summary</h3>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md transition-colors duration-200">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Transaction Summary</h3>
         {selectedAccounts.length > 0 ? (
           <div className="space-y-2">
-            {/* Added Selected/Total Accounts */}
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <span>Accounts Selected</span>
               <span className="font-semibold">
                 {selectedAccounts.length} / {accounts.length}
               </span>
             </div>
 
-            {/* Total Recoverable SOL */}
-            <div className="flex justify-between">
+            <div className="flex justify-between text-gray-800 dark:text-white">
               <span>Total Recoverable SOL</span>
               <span className="font-semibold">{totalRentSol} SOL</span>
             </div>
 
-            {/* Processing Fee */}
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <span>Processing fee ({DONATION_PERCENTAGE}%)</span>
               <span>{donationAmount} SOL</span>
             </div>
 
-            {/* You Receive */}
-            <div className="flex justify-between font-bold text-purple-600 pt-2 border-t">
+            <div className="flex justify-between font-bold text-purple-600 pt-2 border-t dark:border-gray-700">
               <span>You Receive</span>
               <span>{userReceives} SOL</span>
             </div>
           </div>
         ) : (
-          <p className="text-gray-600">No accounts selected.</p>
+          <p className="text-gray-600 dark:text-gray-400">No accounts selected.</p>
         )}
       </div>
 
-      {/* Select All Checkbox */}
       <div
         className="flex items-center mb-4 cursor-pointer"
-        onClick={onToggleAll} // Trigger the toggle function when clicking anywhere in the row
+        onClick={onToggleAll}
       >
         <input
           type="checkbox"
           checked={allSelected}
-          onChange={(e) => e.stopPropagation()} // Prevent event bubbling from the checkbox
+          onChange={(e) => e.stopPropagation()}
           className="h-4 w-4 text-purple-600"
         />
-        <label className="ml-2 text-gray-800 font-medium">Select All</label>
+        <label className="ml-2 text-gray-800 dark:text-white font-medium">Select All</label>
       </div>
 
-      {/* List of Accounts */}
       <div className="space-y-2">
         {accounts.length > 0 ? (
           accounts.map((account) => (
             <div
               key={account.pubkey}
-              className={`bg-white p-4 rounded-lg shadow-sm flex justify-between items-center hover:bg-purple-50 ${
+              className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm flex justify-between items-center hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors duration-200 ${
                 account.selected ? 'ring-2 ring-purple-500' : ''
               }`}
-              onClick={() => onSelect(account.pubkey)} // Parent row click
+              onClick={() => onSelect(account.pubkey)}
             >
               <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   checked={account.selected}
-                  onClick={(e) => e.stopPropagation()} // Prevent row click when checkbox is clicked
-                  onChange={() => onSelect(account.pubkey)} // Handle checkbox toggle
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={() => onSelect(account.pubkey)}
                   className="h-4 w-4 text-purple-600"
                 />
                 <div>
-                  <p className="font-mono text-sm text-gray-600">
+                  <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
                     {account.pubkey.slice(0, 4)}...{account.pubkey.slice(-4)}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-500">
                     Mint: {account.mint.slice(0, 4)}...{account.mint.slice(-4)}
                   </p>
                 </div>
@@ -290,7 +284,7 @@ function TokenAccountsList({
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-600">
+          <div className="text-center text-gray-600 dark:text-gray-400">
             No empty token accounts found.
           </div>
         )}
@@ -307,46 +301,45 @@ function TransactionHistorySection({
   isLoading: boolean;
 }) {
   return (
-    <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-8 transition-colors duration-200">
       <div className="flex items-center space-x-3 mb-6">
         <History className="w-6 h-6 text-purple-600" />
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           Transaction History
         </h2>
       </div>
 
       {isLoading ? (
-        <div className="text-center text-gray-600">
+        <div className="text-center text-gray-600 dark:text-gray-400">
           Loading transaction history...
         </div>
       ) : history.length > 0 ? (
         <div className="space-y-4">
           {history.map((tx, index) => (
-            <div key={index} className="border-b pb-4">
+            <div key={index} className="border-b dark:border-gray-700 pb-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {new Date(tx.date).toLocaleString()}
                   </p>
-                  <p className="font-semibold">
+                  <p className="font-semibold text-gray-800 dark:text-white">
                     Closed {tx.accountsClosed}{' '}
                     {tx.accountsClosed === 1 ? 'account' : 'accounts'}
                   </p>
-
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Wallet:{' '}
                     <a
                       href={`https://solscan.io/account/${tx.walletAddress}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-purple-600 underline"
+                      className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 underline"
                     >
                       {tx.walletAddress.slice(0, 5)}...
                       {tx.walletAddress.slice(-3)}
                     </a>
                   </p>
                 </div>
-                <p className="text-purple-600 font-bold">
+                <p className="text-purple-600 dark:text-purple-400 font-bold">
                   {tx.solRecovered.toFixed(4)} SOL
                 </p>
               </div>
@@ -354,7 +347,7 @@ function TransactionHistorySection({
           ))}
         </div>
       ) : (
-        <div className="text-center text-gray-600">
+        <div className="text-center text-gray-600 dark:text-gray-400">
           No transaction history found yet.
         </div>
       )}
@@ -375,8 +368,37 @@ function App() {
     accountsNuked: 0,
     currentTPS: 0,
   });
-
   const [allSelected, setAllSelected] = useState(false);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [popupData, setPopupData] = useState({
+    accountsClosed: 0,
+    solRecovered: 0,
+  });
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') || 'light';
+    }
+    return 'light';
+  });
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   const toggleAllAccounts = () => {
     setAllSelected((prev) => !prev);
@@ -388,35 +410,24 @@ function App() {
   const fetchAndSetStats = async () => {
     try {
       console.log('Fetching dynamic stats...');
-
-      // Fetch calculated stats from logs
       const statsFromLogs = await fetchDynamicStats();
       console.log('Fetched stats from logs:', statsFromLogs);
 
-      // Ensure statsFromLogs contains valid data
       if (statsFromLogs) {
         setStats((prevStats) => ({
           totalSolRecovered: statsFromLogs.total_sol_recovered || 0,
           accountsNuked: statsFromLogs.total_accounts_nuked || 0,
-          currentTPS: prevStats.currentTPS || 0, // Preserve current TPS value
+          currentTPS: prevStats.currentTPS || 0,
         }));
-        console.log('Stats updated successfully:', {
-          totalSolRecovered: statsFromLogs.total_sol_recovered || 0,
-          accountsNuked: statsFromLogs.total_accounts_nuked || 0,
-        });
       } else {
-        console.warn('Stats from logs are empty or invalid.');
         setStats((prevStats) => ({
           totalSolRecovered: 0,
           accountsNuked: 0,
-          currentTPS: prevStats.currentTPS || 0, // Preserve current TPS value
+          currentTPS: prevStats.currentTPS || 0,
         }));
       }
     } catch (error) {
-      // Log and gracefully handle errors
       console.error('Error in fetchAndSetStats:', error.message || error);
-
-      // Optionally, reset stats to avoid stale data in the UI
       setStats((prevStats) => ({
         totalSolRecovered: 0,
         accountsNuked: 0,
@@ -425,17 +436,16 @@ function App() {
     }
   };
 
-  // Fetch and Set Logs
   const fetchAndSetLogs = async () => {
     try {
       const logsFromDB = await fetchLogs();
       if (logsFromDB) {
         setHistory(
           logsFromDB.map((log) => ({
-            date: log.date || new Date().toISOString(), // Default to current time if missing
-            accountsClosed: log.accountsClosed || 0, // Directly use accounts_closed from DB
-            solRecovered: log.solRecovered || 0.0, // Directly use sol_recovered from DB
-            walletAddress: log.walletAddress || 'Unknown', // Default to 'Unknown' if null
+            date: log.date || new Date().toISOString(),
+            accountsClosed: log.accountsClosed || 0,
+            solRecovered: log.solRecovered || 0.0,
+            walletAddress: log.walletAddress || 'Unknown',
           }))
         );
       }
@@ -443,23 +453,18 @@ function App() {
       console.error('Error fetching logs:', error);
     }
   };
+
   const fetchTPS = async () => {
     try {
       const recentPerformance = await connection.getRecentPerformanceSamples(1);
-      console.log('Performance Data:', recentPerformance); // Log for debugging
-
       if (recentPerformance && recentPerformance.length > 0) {
         const { samplePeriodSecs, numTransactions } = recentPerformance[0];
         const tps = Math.round(numTransactions / samplePeriodSecs);
-        console.log(
-          `Sample Period: ${samplePeriodSecs}, Transactions: ${numTransactions}, TPS: ${tps}`
-        );
         setStats((prev) => ({
           ...prev,
           currentTPS: tps,
         }));
       } else {
-        console.warn('No recent performance samples available');
         setStats((prev) => ({
           ...prev,
           currentTPS: 0,
@@ -475,9 +480,9 @@ function App() {
   };
 
   useEffect(() => {
-    fetchTPS(); // Initial fetch
-    const interval = setInterval(fetchTPS, 5000); // Fetch TPS every 5 seconds
-    return () => clearInterval(interval); // Cleanup on unmount
+    fetchTPS();
+    const interval = setInterval(fetchTPS, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const scanAccounts = async () => {
@@ -495,8 +500,6 @@ function App() {
         { programId: TOKEN_PROGRAM_ID }
       );
 
-      console.log('Found total token accounts:', accounts.value.length);
-
       const emptyAccounts = accounts.value
         .filter(({ account }) => {
           const parsedInfo = account.data.parsed.info;
@@ -508,8 +511,6 @@ function App() {
           rentLamports: account.lamports,
           selected: false,
         }));
-
-      console.log('Found empty accounts:', emptyAccounts.length);
 
       setEmptyAccounts(emptyAccounts);
 
@@ -548,7 +549,6 @@ function App() {
       const batches: TransactionInstruction[][] = [];
       let currentBatch: TransactionInstruction[] = [];
 
-      // Prepare batches of up to 15 accounts
       selectedAccounts.forEach((account, index) => {
         totalRentLamports += account.rentLamports;
         currentBatch.push(
@@ -565,12 +565,11 @@ function App() {
         }
       });
 
-      // Calculate donation and referral amounts
       const donationAmount = Math.floor(
         (totalRentLamports * DONATION_PERCENTAGE) / 100
       );
       const params = new URLSearchParams(window.location.search);
-      const referrer = params.get('ref'); // Get referrer wallet from URL
+      const referrer = params.get('ref');
 
       let referralAmount = 0;
       let donationAfterReferral = donationAmount;
@@ -579,10 +578,9 @@ function App() {
         referralAmount = Math.floor(
           (donationAmount * REFERRAL_PERCENTAGE) / 100
         );
-        donationAfterReferral = donationAmount - referralAmount; // Deduct referral amount from donation
+        donationAfterReferral = donationAmount - referralAmount;
       }
 
-      // Add donation transfer instruction
       if (donationAfterReferral > 0) {
         batches.push([
           SystemProgram.transfer({
@@ -593,7 +591,6 @@ function App() {
         ]);
       }
 
-      // Add referral transfer instruction if applicable
       if (referrer && referralAmount > 0) {
         batches.push([
           SystemProgram.transfer({
@@ -604,50 +601,43 @@ function App() {
         ]);
       }
 
-      // Prepare transactions for all batches
       const transactions = await Promise.all(
         batches.map(async (instructions) => {
           const message = new TransactionMessage({
             payerKey: publicKey,
             recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
-            instructions, // Instructions for this batch
+            instructions,
           }).compileToV0Message();
 
           return new VersionedTransaction(message);
         })
       );
 
-      // Use signAndSendAllTransactions to sign and send all transactions
-      const provider = (window as any).phantom.solana; // Detect Phantom provider
+      const provider = (window as any).phantom.solana;
       const { signatures } = await provider.signAndSendAllTransactions(
         transactions
       );
 
-      // Confirm all transactions
       await connection.getSignatureStatuses(signatures);
 
       const solRecovered = totalRentLamports / LAMPORTS_PER_SOL;
       const accountsClosed = selectedAccounts.length;
 
-      // Save log and update stats
       await saveLog(
         `Recovered ${solRecovered.toFixed(
           4
         )} SOL from ${accountsClosed} accounts in ${
           batches.length
         } transactions.`,
-        signatures.join(', '), // Join all transaction signatures into a string
+        signatures.join(', '),
         publicKey.toString(),
         solRecovered,
         accountsClosed
       );
 
-      await scanAccounts(); // Refresh empty accounts
+      await scanAccounts();
       setPopupData({ accountsClosed, solRecovered });
       setIsPopupVisible(true);
-      console.log(
-        `All ${accountsClosed} accounts closed successfully in ${batches.length} transactions.`
-      );
     } catch (err: any) {
       console.error('Error closing accounts:', err);
       setError(err.message || 'Failed to close accounts. Please try again.');
@@ -656,17 +646,11 @@ function App() {
     }
   };
 
-  const [isPopupVisible, setIsPopupVisible] = useState(false);
-  const [popupData, setPopupData] = useState({
-    accountsClosed: 0,
-    solRecovered: 0,
-  });
-
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         await fetchAndSetStats();
-        await fetchAndSetLogs(); // Add your second function here
+        await fetchAndSetLogs();
       } catch (error) {
         console.error('Error fetching initial data:', error);
       }
@@ -674,11 +658,9 @@ function App() {
 
     fetchInitialData();
 
-    // Set up intervals for both fetches
     const statsInterval = setInterval(fetchAndSetStats, 3000);
-    const logsInterval = setInterval(fetchAndSetLogs, 5000); // Example interval for logs
+    const logsInterval = setInterval(fetchAndSetLogs, 5000);
 
-    // Cleanup intervals on component unmount
     return () => {
       clearInterval(statsInterval);
       clearInterval(logsInterval);
@@ -687,8 +669,8 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
-        <nav className="bg-white shadow-md">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-200">
+        <nav className="bg-white dark:bg-gray-800 shadow-md transition-colors duration-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
@@ -699,16 +681,27 @@ function App() {
                 />
                 <Link
                   to="/"
-                  className="ml-2 text-xl font-bold text-gray-800 hover:text-purple-600"
+                  className="ml-2 text-xl font-bold text-gray-800 dark:text-white hover:text-purple-600 transition-colors duration-200"
                 >
                   SolCleaner
                 </Link>
               </div>
 
               <div className="flex items-center space-x-6">
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+                  aria-label="Toggle theme"
+                >
+                  {theme === 'light' ? (
+                    <Moon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                  ) : (
+                    <Sun className="w-5 h-5 text-gray-300" />
+                  )}
+                </button>
                 <Link
                   to="/about"
-                  className="text-gray-600 hover:text-purple-600 font-medium"
+                  className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors duration-200"
                 >
                   About Us
                 </Link>
@@ -718,7 +711,6 @@ function App() {
           </div>
         </nav>
 
-        {/* Success Popup */}
         <SuccessPopup
           isVisible={isPopupVisible}
           onClose={() => setIsPopupVisible(false)}
@@ -728,16 +720,15 @@ function App() {
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Routes>
-            {/* Home Page */}
             <Route
               path="/"
               element={
                 <div>
                   <div className="text-center mb-16">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 transition-colors duration-200">
                       Clean Your Solana Token Accounts
                     </h1>
-                    <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                    <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto transition-colors duration-200">
                       Recover SOL from empty token accounts safely and
                       efficiently. Connect your wallet to start cleaning and
                       claim your SOL back.
@@ -762,10 +753,10 @@ function App() {
                     />
                   </div>
 
-                  {publicKey ? (
-                    <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+                  {publicKey && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-8 transition-colors duration-200">
                       <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                           Your Empty Token Accounts
                         </h2>
                         <div className="flex items-center space-x-4">
@@ -804,7 +795,7 @@ function App() {
                         </div>
                       </div>
                       {error ? (
-                        <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-4">
+                        <div className="bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 p-4 rounded-lg mb-4">
                           {error}
                         </div>
                       ) : (
@@ -818,28 +809,27 @@ function App() {
                         />
                       )}
                     </div>
-                  ) : null}
+                  )}
 
                   <TransactionHistorySection
                     history={history}
                     isLoading={isScanning}
                   />
-                  {publicKey ? (
+                  {publicKey && (
                     <ReferralSection walletAddress={publicKey.toString()} />
-                  ) : null}
+                  )}
                 </div>
               }
             />
 
-            {/* About Us Page */}
             <Route path="/about" element={<AboutUs />} />
           </Routes>
         </main>
 
-        <footer className="bg-white border-t">
+        <footer className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 transition-colors duration-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center">
-              <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">
+              <h3 className="text-sm font-semibold text-gray-400 dark:text-gray-500 tracking-wider uppercase">
                 Connect With Us
               </h3>
               <ul className="mt-4 flex justify-center space-x-6">
@@ -849,7 +839,7 @@ function App() {
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`text-gray-400 transition-colors ${social.color}`}
+                      className={`text-gray-400 dark:text-gray-500 transition-colors ${social.color}`}
                       title={social.name}
                     >
                       <social.icon className="h-6 w-6" />
@@ -857,7 +847,7 @@ function App() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-8 text-base text-gray-400">
+              <p className="mt-8 text-base text-gray-400 dark:text-gray-500">
                 © {new Date().getFullYear()} SolCleaner. All rights reserved.
               </p>
             </div>
