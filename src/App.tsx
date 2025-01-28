@@ -559,7 +559,7 @@ function App() {
           )
         );
 
-        if ((index + 1) % 18 === 0 || index === selectedAccounts.length - 1) {
+        if ((index + 1) % 15 === 0 || index === selectedAccounts.length - 1) {
           batches.push([...currentBatch]);
           currentBatch = [];
         }
@@ -617,38 +617,26 @@ function App() {
         })
       );
 
-      // Phantom's method to sign all transactions
-      const signedTransactions = await (
-        window as any
-      ).phantom.solana.signAllTransactions(transactions);
-      console.log('Transactions signed successfully.');
-
-      // Send all signed transactions
-      const sendResults = await Promise.all(
-        signedTransactions.map((tx: VersionedTransaction) =>
-          connection.sendRawTransaction(tx.serialize())
-        )
+      // Use signAndSendAllTransactions to sign and send all transactions
+      const provider = (window as any).phantom.solana; // Detect Phantom provider
+      const { signatures } = await provider.signAndSendAllTransactions(
+        transactions
       );
 
       // Confirm all transactions
-      await Promise.all(
-        sendResults.map((signature: string) =>
-          connection.confirmTransaction(signature, 'finalized')
-        )
-      );
+      await connection.getSignatureStatuses(signatures);
 
       const solRecovered = totalRentLamports / LAMPORTS_PER_SOL;
       const accountsClosed = selectedAccounts.length;
 
       // Save log and update stats
-      // Log the first transaction signature as an example
       await saveLog(
         `Recovered ${solRecovered.toFixed(
           4
         )} SOL from ${accountsClosed} accounts in ${
           batches.length
         } transactions.`,
-        sendResults.join(', '), // Join all transaction signatures into a string
+        signatures.join(', '), // Join all transaction signatures into a string
         publicKey.toString(),
         solRecovered,
         accountsClosed
