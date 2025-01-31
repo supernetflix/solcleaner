@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import BurnPage from './pages/BurnPage';
+import LockPage from './pages/LockPage';
+import AIPage from './pages/AIPage';
 import { VersionedTransaction } from '@solana/web3.js';
 import { Instagram, Linkedin, Github, X, Send, Moon, Sun } from 'lucide-react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
@@ -99,7 +102,9 @@ function SuccessPopup({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-sm w-full transition-colors duration-200">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Success!</h2>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+          Success!
+        </h2>
         <p className="text-gray-700 dark:text-gray-300 mb-4">
           You successfully closed <strong>{accountsClosed}</strong>{' '}
           {accountsClosed === 1 ? 'account' : 'accounts'} and recovered{' '}
@@ -129,7 +134,9 @@ function StatsCard({
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md transition-colors duration-200">
       <div className="flex items-center space-x-3 mb-2">
         <Icon className="w-6 h-6 text-purple-600" />
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{title}</h3>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+          {title}
+        </h3>
       </div>
       <p className="text-2xl font-bold text-purple-600">{value}</p>
     </div>
@@ -147,7 +154,9 @@ function ReferralSection({ walletAddress }: { walletAddress: string }) {
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-8 transition-colors duration-200">
       <div className="flex items-center space-x-3 mb-4">
         <Share2 className="w-6 h-6 text-purple-600" />
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Referral Link</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Your Referral Link
+        </h2>
       </div>
       <p className="text-gray-600 dark:text-gray-400 mb-4">
         Share your referral link and earn {REFERRAL_PERCENTAGE}% of donations
@@ -206,7 +215,9 @@ function TokenAccountsList({
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md transition-colors duration-200">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Transaction Summary</h3>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+          Transaction Summary
+        </h3>
         {selectedAccounts.length > 0 ? (
           <div className="space-y-2">
             <div className="flex justify-between text-gray-600 dark:text-gray-400">
@@ -232,7 +243,9 @@ function TokenAccountsList({
             </div>
           </div>
         ) : (
-          <p className="text-gray-600 dark:text-gray-400">No accounts selected.</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            No accounts selected.
+          </p>
         )}
       </div>
 
@@ -246,7 +259,9 @@ function TokenAccountsList({
           onChange={(e) => e.stopPropagation()}
           className="h-4 w-4 text-purple-600"
         />
-        <label className="ml-2 text-gray-800 dark:text-white font-medium">Select All</label>
+        <label className="ml-2 text-gray-800 dark:text-white font-medium">
+          Select All
+        </label>
       </div>
 
       <div className="space-y-2">
@@ -688,7 +703,35 @@ function App() {
               </div>
 
               <div className="flex items-center space-x-6">
-                <button
+
+                                <Link
+                  to="/burn"
+                  className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors duration-200"
+                >
+                  Burn
+                </Link>
+                <Link
+                  to="/lock"
+                  className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors duration-200"
+                >
+                  Lock
+                </Link>
+              
+
+              
+                <Link
+                  to="/ai"
+                  className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors duration-200"
+                >
+                  Ai
+                </Link>
+              <Link
+                  to="/about"
+                  className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors duration-200"
+                >
+                  About Us
+                </Link>
+                                <button
                   onClick={toggleTheme}
                   className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
                   aria-label="Toggle theme"
@@ -699,12 +742,6 @@ function App() {
                     <Sun className="w-5 h-5 text-gray-300" />
                   )}
                 </button>
-                <Link
-                  to="/about"
-                  className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors duration-200"
-                >
-                  About Us
-                </Link>
                 <WalletMultiButton className="!bg-purple-600 hover:!bg-purple-700" />
               </div>
             </div>
@@ -823,6 +860,11 @@ function App() {
             />
 
             <Route path="/about" element={<AboutUs />} />
+            <Route path="/burn" element={<BurnPage />} />
+            <Route path="/lock" element={<LockPage />} />
+            <Route path="/ai" element={<AIPage />} />
+
+            
           </Routes>
         </main>
 

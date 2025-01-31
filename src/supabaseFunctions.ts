@@ -1,11 +1,5 @@
 import supabase from './supabaseClient';
 
-interface Stats {
-  total_accounts_nuked: number;
-  total_sol_recovered: number;
-  current_tps?: number;
-}
-
 // Save Logs
 export async function saveLog(
   action: string,
@@ -38,31 +32,6 @@ export async function saveLog(
   }
 }
 
-// Update Stats
-export async function updateStats(accountsNuked: number, solRecovered: number) {
-  try {
-    const { data, error } = await supabase
-      .from('stats')
-      .update({
-        total_accounts_nuked: supabase.raw('total_accounts_nuked + ?', [accountsNuked]),
-        total_sol_recovered: supabase.raw('total_sol_recovered + ?', [solRecovered]),
-      })
-      .eq('id', 1); // Assuming stats row has id = 1
-
-    if (error) {
-      console.error('Error updating stats:', error.message);
-      throw new Error('Failed to update stats in Supabase.');
-    }
-
-    console.log('Stats updated successfully:', data);
-    return data;
-  } catch (err) {
-    console.error('Unexpected error in updateStats:', err);
-    throw err;
-  }
-}
-
-
 export async function fetchLogs() {
   const { data, error } = await supabase
     .from('logs')
@@ -83,12 +52,9 @@ export async function fetchLogs() {
   }));
 }
 
-
 export async function fetchDynamicStats() {
   try {
-    const { data, error } = await supabase
-      .from('logs')
-      .select('*'); // Fetch all logs
+    const { data, error } = await supabase.from('logs').select('*'); // Fetch all logs
 
     if (error) {
       console.error('Error fetching logs for stats:', error.message);
