@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import BurnPage from './pages/BurnPage';
-import LockPage from './pages/LockPage';
-import AIPage from './pages/AIPage';
+import LockPage from './pages/ComingSoon';
+import AIPage from './pages/ComingSoon';
 import { VersionedTransaction } from '@solana/web3.js';
 import { Instagram, Linkedin, Github, X, Send, Moon, Sun } from 'lucide-react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
@@ -32,6 +32,12 @@ import {
 import '@solana/wallet-adapter-react-ui/styles.css';
 import { saveLog, fetchLogs, fetchDynamicStats } from './supabaseFunctions';
 import AboutUs from './pages/AboutUs';
+import {
+  SuccessPopup,
+  StatsCard,
+  TransactionHistorySection,
+  ReferralSection,
+} from './components/UIComponents';
 
 interface TokenAccount {
   pubkey: string;
@@ -85,100 +91,6 @@ const REFERRAL_PERCENTAGE = 5;
 const DONATION_WALLET = new PublicKey(
   '9uPrBhLnv2mt4LV28G33tG1AinY16PpX4cy3dr7Q7aBZ'
 );
-
-function SuccessPopup({
-  isVisible,
-  onClose,
-  accountsClosed,
-  solRecovered,
-}: {
-  isVisible: boolean;
-  onClose: () => void;
-  accountsClosed: number;
-  solRecovered: number;
-}) {
-  if (!isVisible) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-sm w-full transition-colors duration-200">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-          Success!
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 mb-4">
-          You successfully closed <strong>{accountsClosed}</strong>{' '}
-          {accountsClosed === 1 ? 'account' : 'accounts'} and recovered{' '}
-          <strong>{solRecovered.toFixed(4)} SOL</strong>.
-        </p>
-        <button
-          onClick={onClose}
-          className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function StatsCard({
-  icon: Icon,
-  title,
-  value,
-}: {
-  icon: React.ElementType;
-  title: string;
-  value: string;
-}) {
-  return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md transition-colors duration-200">
-      <div className="flex items-center space-x-3 mb-2">
-        <Icon className="w-6 h-6 text-purple-600" />
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-          {title}
-        </h3>
-      </div>
-      <p className="text-2xl font-bold text-purple-600">{value}</p>
-    </div>
-  );
-}
-
-function ReferralSection({ walletAddress }: { walletAddress: string }) {
-  const referralLink = `${window.location.origin}?ref=${walletAddress}`;
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(referralLink);
-  };
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-8 transition-colors duration-200">
-      <div className="flex items-center space-x-3 mb-4">
-        <Share2 className="w-6 h-6 text-purple-600" />
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Your Referral Link
-        </h2>
-      </div>
-      <p className="text-gray-600 dark:text-gray-400 mb-4">
-        Share your referral link and earn {REFERRAL_PERCENTAGE}% of donations
-        from referred users!
-      </p>
-      <div className="flex items-center space-x-2">
-        <input
-          type="text"
-          value={referralLink}
-          readOnly
-          className="flex-1 p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white"
-        />
-        <button
-          onClick={copyToClipboard}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-        >
-          Copy
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function TokenAccountsList({
   accounts,
@@ -304,68 +216,6 @@ function TokenAccountsList({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function TransactionHistorySection({
-  history,
-  isLoading,
-}: {
-  history: TransactionHistory[];
-  isLoading: boolean;
-}) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-8 transition-colors duration-200">
-      <div className="flex items-center space-x-3 mb-6">
-        <History className="w-6 h-6 text-purple-600" />
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Transaction History
-        </h2>
-      </div>
-
-      {isLoading ? (
-        <div className="text-center text-gray-600 dark:text-gray-400">
-          Loading transaction history...
-        </div>
-      ) : history.length > 0 ? (
-        <div className="space-y-4">
-          {history.map((tx, index) => (
-            <div key={index} className="border-b dark:border-gray-700 pb-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(tx.date).toLocaleString()}
-                  </p>
-                  <p className="font-semibold text-gray-800 dark:text-white">
-                    Closed {tx.accountsClosed}{' '}
-                    {tx.accountsClosed === 1 ? 'account' : 'accounts'}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Wallet:{' '}
-                    <a
-                      href={`https://solscan.io/account/${tx.walletAddress}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 underline"
-                    >
-                      {tx.walletAddress.slice(0, 5)}...
-                      {tx.walletAddress.slice(-3)}
-                    </a>
-                  </p>
-                </div>
-                <p className="text-purple-600 dark:text-purple-400 font-bold">
-                  {tx.solRecovered.toFixed(4)} SOL
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center text-gray-600 dark:text-gray-400">
-          No transaction history found yet.
-        </div>
-      )}
     </div>
   );
 }
@@ -550,42 +400,43 @@ function App() {
     );
   };
 
-  const closeSelectedAccounts = async (): Promise<void> => {
-    if (!publicKey || isClosing) return;
+const MAX_PER_TX = 256;
 
-    const selectedAccounts = emptyAccounts.filter((acc) => acc.selected);
-    if (selectedAccounts.length === 0) return;
+const closeSelectedAccounts = async (): Promise<void> => {
+  if (!publicKey || isClosing) return;
 
-    setIsClosing(true);
-    setError(null);
+  const selectedAccounts = emptyAccounts.filter((acc) => acc.selected);
+  if (selectedAccounts.length === 0) return;
 
-    try {
-      let totalRentLamports = 0;
-      const batches: TransactionInstruction[][] = [];
-      let currentBatch: TransactionInstruction[] = [];
+  setIsClosing(true);
+  setError(null);
 
-      selectedAccounts.forEach((account, index) => {
-        totalRentLamports += account.rentLamports;
-        currentBatch.push(
+  try {
+    // Create batches of instructions with a maximum of MAX_PER_TX accounts per transaction.
+    const batches: TransactionInstruction[][] = [];
+    for (let i = 0; i < selectedAccounts.length; i += MAX_PER_TX) {
+      const chunk = selectedAccounts.slice(i, i + MAX_PER_TX);
+      let totalRentLamportsForChunk = 0;
+      const instructions: TransactionInstruction[] = [];
+
+      // Add a close instruction for each account in the chunk.
+      for (const account of chunk) {
+        totalRentLamportsForChunk += account.rentLamports;
+        instructions.push(
           createCloseAccountInstruction(
             new PublicKey(account.pubkey),
-            publicKey,
-            publicKey
+            publicKey, // destination: send rent to your wallet
+            publicKey  // owner: your wallet
           )
         );
+      }
 
-        if ((index + 1) % 15 === 0 || index === selectedAccounts.length - 1) {
-          batches.push([...currentBatch]);
-          currentBatch = [];
-        }
-      });
-
-      const donationAmount = Math.floor(
-        (totalRentLamports * DONATION_PERCENTAGE) / 100
+      // Calculate donation and referral amounts for the entire chunk.
+      let donationAmount = Math.floor(
+        (totalRentLamportsForChunk * DONATION_PERCENTAGE) / 100
       );
       const params = new URLSearchParams(window.location.search);
       const referrer = params.get('ref');
-
       let referralAmount = 0;
       let donationAfterReferral = donationAmount;
 
@@ -596,70 +447,93 @@ function App() {
         donationAfterReferral = donationAmount - referralAmount;
       }
 
+      // Append the donation instruction to the same transaction.
       if (donationAfterReferral > 0) {
-        batches.push([
+        instructions.push(
           SystemProgram.transfer({
             fromPubkey: publicKey,
             toPubkey: DONATION_WALLET,
             lamports: donationAfterReferral,
-          }),
-        ]);
+          })
+        );
       }
 
+      // Append the referral instruction if applicable.
       if (referrer && referralAmount > 0) {
-        batches.push([
+        instructions.push(
           SystemProgram.transfer({
             fromPubkey: publicKey,
             toPubkey: new PublicKey(referrer),
             lamports: referralAmount,
-          }),
-        ]);
+          })
+        );
       }
 
-      const transactions = await Promise.all(
-        batches.map(async (instructions) => {
-          const message = new TransactionMessage({
-            payerKey: publicKey,
-            recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
-            instructions,
-          }).compileToV0Message();
-
-          return new VersionedTransaction(message);
-        })
-      );
-
-      const provider = (window as any).phantom.solana;
-      const { signatures } = await provider.signAndSendAllTransactions(
-        transactions
-      );
-
-      await connection.getSignatureStatuses(signatures);
-
-      const solRecovered = totalRentLamports / LAMPORTS_PER_SOL;
-      const accountsClosed = selectedAccounts.length;
-
-      await saveLog(
-        `Recovered ${solRecovered.toFixed(
-          4
-        )} SOL from ${accountsClosed} accounts in ${
-          batches.length
-        } transactions.`,
-        signatures.join(', '),
-        publicKey.toString(),
-        solRecovered,
-        accountsClosed
-      );
-
-      await scanAccounts();
-      setPopupData({ accountsClosed, solRecovered });
-      setIsPopupVisible(true);
-    } catch (err: any) {
-      console.error('Error closing accounts:', err);
-      setError(err.message || 'Failed to close accounts. Please try again.');
-    } finally {
-      setIsClosing(false);
+      batches.push(instructions);
     }
-  };
+
+    // Build versioned transactions for all batches.
+    const transactions = await Promise.all(
+      batches.map(async (instructions) => {
+        // Get a recent blockhash for the transaction.
+        const { blockhash } = await connection.getLatestBlockhash();
+
+        // Build a v0 message that supports many accounts.
+        const messageV0 = new TransactionMessage({
+          payerKey: publicKey,
+          recentBlockhash: blockhash,
+          instructions,
+        }).compileToV0Message();
+
+        return new VersionedTransaction(messageV0);
+      })
+    );
+
+    // If you’re using Phantom (or another provider) that supports signing versioned transactions:
+    const provider = (window as any).phantom?.solana;
+    if (!provider) {
+      throw new Error("Phantom provider not found.");
+    }
+    // Sign and send all transactions (Phantom supports signAndSendAllTransactions)
+    const { signatures } = await provider.signAndSendAllTransactions(
+      transactions
+    );
+
+    // Confirm transactions
+    await connection.getSignatureStatuses(signatures);
+
+    // Log the recovery
+    const totalRentLamports = selectedAccounts.reduce(
+      (sum, account) => sum + account.rentLamports,
+      0
+    );
+    const solRecovered = totalRentLamports / LAMPORTS_PER_SOL;
+    const accountsClosed = selectedAccounts.length;
+
+    await saveLog(
+      `Recovered ${solRecovered.toFixed(
+        4
+      )} SOL from ${accountsClosed} accounts in ${batches.length} transactions.`,
+      signatures.join(', '),
+      publicKey.toString(),
+      solRecovered,
+      accountsClosed
+    );
+
+    // Refresh the accounts list and display success
+    await scanAccounts();
+    setPopupData({ accountsClosed, solRecovered });
+    setIsPopupVisible(true);
+    console.log(
+      `Closed ${accountsClosed} accounts successfully in ${batches.length} transactions.`
+    );
+  } catch (err: any) {
+    console.error('Error closing accounts:', err);
+    setError(err.message || 'Failed to close accounts. Please try again.');
+  } finally {
+    setIsClosing(false);
+  }
+};
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -703,8 +577,7 @@ function App() {
               </div>
 
               <div className="flex items-center space-x-6">
-
-                                <Link
+                <Link
                   to="/burn"
                   className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors duration-200"
                 >
@@ -716,22 +589,20 @@ function App() {
                 >
                   Lock
                 </Link>
-              
 
-              
                 <Link
                   to="/ai"
                   className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors duration-200"
                 >
                   Ai
                 </Link>
-              <Link
+                <Link
                   to="/about"
                   className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors duration-200"
                 >
                   About Us
                 </Link>
-                                <button
+                <button
                   onClick={toggleTheme}
                   className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
                   aria-label="Toggle theme"
@@ -863,8 +734,6 @@ function App() {
             <Route path="/burn" element={<BurnPage />} />
             <Route path="/lock" element={<LockPage />} />
             <Route path="/ai" element={<AIPage />} />
-
-            
           </Routes>
         </main>
 
